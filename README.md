@@ -1,5 +1,361 @@
 #  Stc-MNGM Stock Management System v2.0
 
+## 📊 System Architecture Diagrams
+
+### 🏗️ Class Diagram (Database Schema)
+
+```mermaid
+classDiagram
+    class Users {
+        +int id
+        +string username
+        +string email
+        +string password
+        +string full_name
+        +enum role
+        +timestamp created_at
+        +timestamp last_login
+        +login()
+        +logout()
+        +isLoggedIn()
+        +isAdmin()
+    }
+
+    class Article {
+        +int id
+        +string nom_article
+        +int id_categorie
+        +int quantite
+        +int prix_unitaire
+        +datetime date_fabrication
+        +datetime date_expiration
+        +string images
+        +getArticle()
+        +countArticle()
+        +addArticle()
+        +updateArticle()
+        +deleteArticle()
+    }
+
+    class CategorieArticle {
+        +int id
+        +string libelle_categorie
+        +getCategorie()
+        +addCategorie()
+        +updateCategorie()
+    }
+
+    class Client {
+        +int id
+        +string nom
+        +string prenom
+        +string telephone
+        +string adresse
+        +getClient()
+        +addClient()
+        +updateClient()
+    }
+
+    class Fournisseur {
+        +int id
+        +string nom
+        +string prenom
+        +string telephone
+        +string adresse
+        +getFournisseur()
+        +addFournisseur()
+        +updateFournisseur()
+    }
+
+    class Vente {
+        +int id
+        +int id_article
+        +int id_client
+        +int quantite
+        +int prix
+        +timestamp date_vente
+        +enum etat
+        +getVente()
+        +addVente()
+        +annulerVente()
+        +getLastVente()
+        +getMostVente()
+    }
+
+    class Commande {
+        +int id
+        +int id_article
+        +int id_fournisseur
+        +int quantite
+        +int prix
+        +timestamp date_commande
+        +getCommande()
+        +addCommande()
+        +updateStock()
+    }
+
+    class Contact {
+        +int id
+        +string nom
+        +string prenom
+        +string email
+        +string numero_de_telephone
+    }
+
+    class DatabaseConnection {
+        +PDO connexion
+        +connect()
+        +disconnect()
+    }
+
+    class AuthManager {
+        +login()
+        +logout()
+        +isLoggedIn()
+        +requireLogin()
+        +getUserInfo()
+        +isAdmin()
+        +requireAdmin()
+    }
+
+    class Dashboard {
+        +getAllCommande()
+        +getAllVente()
+        +getAllArticle()
+        +getCA()
+        +getLastVente()
+        +getMostVente()
+    }
+
+    %% Relationships
+    Article ||--o{ CategorieArticle : belongs_to
+    Vente ||--o{ Article : contains
+    Vente ||--o{ Client : made_by
+    Commande ||--o{ Article : orders
+    Commande ||--o{ Fournisseur : from
+    AuthManager --> Users : manages
+    Dashboard --> Vente : displays
+    Dashboard --> Commande : displays
+    Dashboard --> Article : displays
+```
+
+### 🔄 Sequence Diagram (User Authentication Flow)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant L as Login Page
+    participant A as Auth Manager
+    participant D as Database
+    participant S as Session
+    participant H as Home Page
+
+    U->>L: Access Login Page
+    L->>U: Display Login Form
+    
+    U->>L: Enter Credentials
+    L->>A: Submit Login Request
+    A->>D: Query User by Username/Email
+    D->>A: Return User Data
+    
+    alt Valid Credentials
+        A->>A: Verify Password Hash
+        A->>D: Update Last Login
+        A->>S: Create Session
+        A->>L: Return Success
+        L->>H: Redirect to Dashboard
+        H->>U: Display Dashboard
+    else Invalid Credentials
+        A->>L: Return Error
+        L->>U: Display Error Message
+    end
+
+    Note over U,H: User is now authenticated
+    U->>H: Navigate to Features
+    H->>A: Check Session
+    A->>S: Validate Session
+    A->>H: Allow Access
+    H->>U: Display Content
+```
+
+### 🔄 Sequence Diagram (Sales Process)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant S as Sales Page
+    participant V as Vente Manager
+    participant A as Article Manager
+    participant D as Database
+    participant R as Receipt
+
+    U->>S: Access Sales Page
+    S->>A: Get Available Articles
+    A->>D: Query Articles
+    D->>A: Return Articles List
+    A->>S: Display Articles
+    
+    U->>S: Select Article & Quantity
+    S->>A: Check Stock Availability
+    A->>D: Query Current Stock
+    D->>A: Return Stock Level
+    
+    alt Sufficient Stock
+        S->>V: Create Sale
+        V->>D: Insert Sale Record
+        V->>A: Update Stock Level
+        A->>D: Decrease Stock
+        V->>R: Generate Receipt
+        R->>U: Display Receipt
+        S->>U: Show Success Message
+    else Insufficient Stock
+        S->>U: Show Stock Error
+    end
+```
+
+### 🔄 Sequence Diagram (Order Process)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant O as Order Page
+    participant C as Commande Manager
+    participant A as Article Manager
+    participant F as Fournisseur Manager
+    participant D as Database
+
+    U->>O: Access Order Page
+    O->>A: Get Articles List
+    A->>D: Query Articles
+    D->>A: Return Articles
+    A->>O: Display Articles
+    
+    O->>F: Get Suppliers List
+    F->>D: Query Suppliers
+    D->>F: Return Suppliers
+    F->>O: Display Suppliers
+    
+    U->>O: Select Article, Supplier & Quantity
+    O->>C: Create Order
+    C->>D: Insert Order Record
+    C->>A: Update Stock Level
+    A->>D: Increase Stock
+    C->>O: Return Success
+    O->>U: Show Success Message
+```
+
+### 📋 Activity Diagram (Main System Flow)
+
+```mermaid
+flowchart TD
+    A[Start Application] --> B{User Authenticated?}
+    B -->|No| C[Show Login Page]
+    C --> D[Enter Credentials]
+    D --> E{Valid Credentials?}
+    E -->|No| C
+    E -->|Yes| F[Create Session]
+    F --> G[Show Dashboard]
+    
+    B -->|Yes| G
+    
+    G --> H{Select Action}
+    
+    H -->|Dashboard| I[Display Statistics]
+    H -->|Articles| J[Article Management]
+    H -->|Sales| K[Sales Management]
+    H -->|Orders| L[Order Management]
+    H -->|Clients| M[Client Management]
+    H -->|Suppliers| N[Supplier Management]
+    H -->|Logout| O[Destroy Session]
+    
+    J --> P{Article Action}
+    P -->|Add| Q[Add New Article]
+    P -->|Edit| R[Edit Article]
+    P -->|Delete| S[Delete Article]
+    P -->|View| T[View Articles]
+    
+    K --> U{Sales Action}
+    U -->|New Sale| V[Create Sale]
+    U -->|View Sales| W[View Sales History]
+    U -->|Cancel Sale| X[Cancel Sale]
+    
+    L --> Y{Order Action}
+    Y -->|New Order| Z[Create Order]
+    Y -->|View Orders| AA[View Order History]
+    
+    M --> BB{Client Action}
+    BB -->|Add| CC[Add New Client]
+    BB -->|Edit| DD[Edit Client]
+    BB -->|View| EE[View Clients]
+    
+    N --> FF{Supplier Action}
+    FF -->|Add| GG[Add New Supplier]
+    FF -->|Edit| HH[Edit Supplier]
+    FF -->|View| II[View Suppliers]
+    
+    Q --> JJ[Update Database]
+    R --> JJ
+    S --> JJ
+    V --> JJ
+    Z --> JJ
+    CC --> JJ
+    DD --> JJ
+    GG --> JJ
+    HH --> JJ
+    
+    JJ --> G
+    O --> A
+    
+    style A fill:#e1f5fe
+    style G fill:#c8e6c9
+    style O fill:#ffcdd2
+```
+
+### 🔐 Activity Diagram (Authentication Flow)
+
+```mermaid
+flowchart TD
+    A[Access Application] --> B{Session Active?}
+    B -->|Yes| C[Check User Role]
+    B -->|No| D[Redirect to Login]
+    
+    C --> E{Is Admin?}
+    E -->|Yes| F[Full Access]
+    E -->|No| G[Limited Access]
+    
+    D --> H[Display Login Form]
+    H --> I[Enter Username/Email]
+    I --> J[Enter Password]
+    J --> K[Submit Form]
+    
+    K --> L{Validate Credentials}
+    L -->|Invalid| M[Show Error Message]
+    M --> H
+    
+    L -->|Valid| N[Create Session]
+    N --> O[Update Last Login]
+    O --> P[Set User Role]
+    P --> Q[Redirect to Dashboard]
+    
+    F --> R[Access All Features]
+    G --> S[Access Basic Features]
+    
+    R --> T{User Action}
+    S --> T
+    
+    T -->|Logout| U[Destroy Session]
+    T -->|Continue| V[Perform Action]
+    
+    U --> D
+    V --> T
+    
+    style A fill:#e1f5fe
+    style F fill:#c8e6c9
+    style G fill:#fff3e0
+    style D fill:#ffcdd2
+    style U fill:#ffcdd2
+```
+
 ## 🚀 Enhanced Features
 
 ### ✨ New Features Added
