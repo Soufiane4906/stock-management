@@ -128,11 +128,11 @@ classDiagram
     }
 
     %% Relationships
-    Article ||--o{ CategorieArticle : belongs_to
-    Vente ||--o{ Article : contains
-    Vente ||--o{ Client : made_by
-    Commande ||--o{ Article : orders
-    Commande ||--o{ Fournisseur : from
+    Article --> CategorieArticle : belongs_to
+    Vente --> Article : contains
+    Vente --> Client : made_by
+    Commande --> Article : orders
+    Commande --> Fournisseur : from
     AuthManager --> Users : manages
     Dashboard --> Vente : displays
     Dashboard --> Commande : displays
