@@ -127,16 +127,21 @@ classDiagram
         +getMostVente()
     }
 
-    %% Relationships
-    Article --> CategorieArticle : belongs_to
-    Vente --> Article : contains
-    Vente --> Client : made_by
-    Commande --> Article : orders
-    Commande --> Fournisseur : from
-    AuthManager --> Users : manages
-    Dashboard --> Vente : displays
-    Dashboard --> Commande : displays
-    Dashboard --> Article : displays
+    %% Relationships with Multiplicities
+    CategorieArticle "1" --> "*" Article : has many
+    Article "*" --> "1" CategorieArticle : belongs to
+    Article "1" --> "*" Vente : sold in
+    Vente "*" --> "1" Article : contains
+    Client "1" --> "*" Vente : makes
+    Vente "*" --> "1" Client : made by
+    Article "1" --> "*" Commande : ordered in
+    Commande "*" --> "1" Article : orders
+    Fournisseur "1" --> "*" Commande : supplies
+    Commande "*" --> "1" Fournisseur : from
+    AuthManager "1" --> "*" Users : manages
+    Dashboard "1" --> "*" Vente : displays
+    Dashboard "1" --> "*" Commande : displays
+    Dashboard "1" --> "*" Article : displays
 ```
 
 ### 🔄 Sequence Diagram (User Authentication Flow)
@@ -566,3 +571,94 @@ For support or questions, please contact the development team.
 ---
 
 ** Stc-MNGM Stock Management System** - Professional inventory management solution 
+
+### 🗃️ Entity Relationship Diagram (ERD)
+
+```mermaid
+erDiagram
+    USERS {
+        int id PK
+        string username UK
+        string email UK
+        string password
+        string full_name
+        enum role
+        timestamp created_at
+        timestamp last_login
+    }
+
+    CATEGORIE_ARTICLE {
+        int id PK
+        string libelle_categorie
+    }
+
+    ARTICLE {
+        int id PK
+        string nom_article
+        int id_categorie FK
+        int quantite
+        int prix_unitaire
+        datetime date_fabrication
+        datetime date_expiration
+        string images
+    }
+
+    CLIENT {
+        int id PK
+        string nom
+        string prenom
+        string telephone
+        string adresse
+    }
+
+    FOURNISSEUR {
+        int id PK
+        string nom
+        string prenom
+        string telephone
+        string adresse
+    }
+
+    VENTE {
+        int id PK
+        int id_article FK
+        int id_client FK
+        int quantite
+        int prix
+        timestamp date_vente
+        enum etat
+    }
+
+    COMMANDE {
+        int id PK
+        int id_article FK
+        int id_fournisseur FK
+        int quantite
+        int prix
+        timestamp date_commande
+    }
+
+    CONTACT {
+        int id PK
+        string nom
+        string prenom
+        string email
+        string numero_de_telephone
+    }
+
+    %% Relationships with Multiplicities
+    CATEGORIE_ARTICLE ||--o{ ARTICLE : "1:N - A category has many articles"
+    ARTICLE }o--|| CATEGORIE_ARTICLE : "N:1 - An article belongs to one category"
+    
+    ARTICLE ||--o{ VENTE : "1:N - An article can be sold multiple times"
+    VENTE }o--|| ARTICLE : "N:1 - A sale contains one article"
+    
+    CLIENT ||--o{ VENTE : "1:N - A client can make multiple sales"
+    VENTE }o--|| CLIENT : "N:1 - A sale is made by one client"
+    
+    ARTICLE ||--o{ COMMANDE : "1:N - An article can be ordered multiple times"
+    COMMANDE }o--|| ARTICLE : "N:1 - An order contains one article"
+    
+    FOURNISSEUR ||--o{ COMMANDE : "1:N - A supplier can have multiple orders"
+    COMMANDE }o--|| FOURNISSEUR : "N:1 - An order is from one supplier"
+``` 
